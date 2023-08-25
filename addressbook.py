@@ -1,21 +1,23 @@
 '''
-У цьому домашньому завданні ми:
+У цьому домашньому завданні вам треба:
 
-Додамо поле для дня народження Birthday. Це поле не обов'язкове, але може бути тільки одне.
-Додамо функціонал роботи з Birthday у клас Record, а саме функцію days_to_birthday, 
-яка повертає кількість днів до наступного дня народження.
-Додамо функціонал перевірки на правильність наведених значень для полів Phone, Birthday.
-Додамо пагінацію (посторінковий висновок) для AddressBook для ситуацій, 
-коли книга дуже велика і треба показати вміст частинами, а не все одразу. 
-Реалізуємо це через створення ітератора за записами.
+Додати функціонал збереження адресної книги на диск та відновлення з диска. 
+Для цього ви можете вибрати будь-який зручний для вас протокол серіалізації/десеріалізації 
+даних та реалізувати методи, які дозволять зберегти всі дані у файл і завантажити їх із файлу.
+
+Додати користувачеві можливість пошуку вмісту книги контактів, щоб можна було знайти всю інформацію 
+про одного або кількох користувачів за кількома цифрами номера телефону або літерами імені тощо.
 '''
-
+import pickle
+import re
 from collections import UserDict
 from datetime import datetime, timedelta
-import re
 
 
 class AddressBook(UserDict):
+    def __init__(self):
+        self.file_path = 'contacts.bin'
+
     def add_record(self, record):
         self.data[record.name.value] = record
 
@@ -30,6 +32,26 @@ class AddressBook(UserDict):
             list_to_show = keys[current_index: current_index + number_records]
             yield [(self.data[key]) for key in list_to_show]
             current_index += number_records
+
+    def write_contacts_to_file(self):
+        with open(self.file_path, "wb") as file:
+            pickle.dump(self.data, file)
+        return 'Contact book saved successfully'
+
+    def read_contacts_from_file(self):
+        with open(self.file_path, "rb") as file:
+            self.data = pickle.load(file)
+        return 'Contact book uploaded successfully'
+
+    def search_info(self, search):
+        result = []
+        for name, phone in self.data.items():
+            if search in name:
+                result.append(name)
+            for number in phone.phones:
+                if search in number.value:
+                    result.append(name)
+        return result
 
 
 class Record:
@@ -58,7 +80,8 @@ class Record:
     def days_to_birthday(self):
         if self.birthday:
             current_datetime = datetime.now()
-            birthday_in_this_year = datetime(year=datetime.now().year, month=self.birthday.value.month, day=self.birthday.value.day)                      
+            birthday_in_this_year = datetime(year=datetime.now(
+            ).year, month=self.birthday.value.month, day=self.birthday.value.day)
             if birthday_in_this_year >= current_datetime:
                 days_left = birthday_in_this_year - current_datetime
                 return f"{self.name}'s birthday {days_left.days} days away"
@@ -73,8 +96,6 @@ class Record:
             return f'{self.name}, phones: {self.phones}, birthday: {self.birthday}'
         else:
             return f'{self.name}, phones: {self.phones}'
-        
-
 
 
 class Field:
@@ -135,10 +156,11 @@ class Birthday(Field):
         try:
             birthday = datetime.strptime(birthday, "%d-%m-%Y")
             if birthday > current_date:
-                raise ValueError("Date of birth cannot be greater than the current date")
-            return birthday       
-        except ValueError: 'Wrong date'
-
+                raise ValueError(
+                    "Date of birth cannot be greater than the current date")
+            return birthday
+        except ValueError:
+            'Wrong date'
 
     def __repr__(self):
         if self._Field__value:
@@ -146,35 +168,40 @@ class Birthday(Field):
 
 
 if __name__ == '__main__':
-    name = Name('Bill')
-    phone = Phone('1234567890')
-    birthday = Birthday('25-07-2023')
-    rec = Record(name, phone, birthday)
     ab = AddressBook()
-    ab.add_record(rec)
+    # name = Name('Bill')
+    # phone = Phone('1234567890')
+    # birthday = Birthday('25-07-2023')
+    # rec = Record(name, phone, birthday)
+    # ab.add_record(rec)
 
-    name1 = Name('Gorg')
-    phone1 = Phone('5864259781')
-    birthday1 = Birthday('10-10-2015')
-    rec1 = Record(name1, phone1, birthday1)
-    ab.add_record(rec1)
+    # name1 = Name('Gorg')
+    # phone1 = Phone('5864259781')
+    # birthday1 = Birthday('10-10-2015')
+    # rec1 = Record(name1, phone1, birthday1)
+    # ab.add_record(rec1)
 
-    rec2 = Record(Name('Olga'), Phone('026856241'))
-    ab.add_record(rec2)
+    # rec2 = Record(Name('Olga'), Phone('026856241'))
+    # ab.add_record(rec2)
 
-    rec3 = Record(Name('Semen'), Phone('586640298'))
-    ab.add_record(rec3)
+    # rec3 = Record(Name('Semen'), Phone('586640298'))
+    # ab.add_record(rec3)
 
-    name4 = Name('Mykola')
-    phone4 = Phone('386425987')
-    birthday4 = Birthday('10-11-1901')
-    rec4 = Record(name4, phone4, birthday4)
-    ab.add_record(rec4)
+    # name4 = Name('Mykola')
+    # phone4 = Phone('386425987')
+    # birthday4 = Birthday('10-11-1901')
+    # rec4 = Record(name4, phone4, birthday4)
+    # ab.add_record(rec4)
 
-    print(ab['Bill'].phones[0].value)
-    print(next(ab.iterator(5)))
-    print(rec1.add_phone('356640298'))
-    print(next(ab.iterator(2)))
-    print(rec1.change_phone('+385864259781', '0265840278'))
-    print(next(ab.iterator(8)))
-    print(rec1.days_to_birthday())
+    # print(ab['Bill'].phones[0].value)
+    # print(next(ab.iterator(5)))
+    # print(rec1.add_phone('356640298'))
+    # print(next(ab.iterator(2)))
+    # print(rec1.change_phone('+385864259781', '0265840278'))
+    # print(next(ab.iterator(8)))
+    # print(rec1.days_to_birthday())
+
+    # print(ab.write_contacts_to_file())
+    print(ab.read_contacts_from_file())
+    print(ab.search_info('l'))
+    print(ab.search_info('02'))
